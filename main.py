@@ -4,6 +4,9 @@ import serial
 import os
 import tensorflow as tf
 
+RED = (0,0,255)
+GREEN = (0,255,0)
+
 model = tf.keras.Model
 model.load_weights('./weights.pt')
 
@@ -18,7 +21,7 @@ else:
     crosswalk_mask = model.predict(cv2.resize(img, (640,640)))
     cv2.imwrite('./mask.bmp', crosswalk_mask)
     
-arduino = serial.Serial('COM4', 9600, timeout=1)
+arduino = serial.Serial('COM4', 9600, timeout=1) #포트에 따라 바꾸기
 
 while True:
     human_existing = False
@@ -40,8 +43,15 @@ while True:
     
     if human_existing:
         signal = '1'
+        circle_color = RED
     else:
         signal = '0'
+        circle_color = GREEN
+    img = cv2.circle(img, (630,630), 7, circle_color, -1)
     arduino.write(signal.encode())
     
-    pass
+    cv2.imshow('cam', img)
+    
+    if cv2.waitKey(5) & 0xFF == 27:
+        break
+cv2.destroyAllWindows()
