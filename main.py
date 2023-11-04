@@ -1,13 +1,23 @@
 from ultralytics import YOLO
 import cv2
-import serial 
+import serial
+import os
+import tensorflow as tf
+
+model = tf.keras.Model
+model.load_weights('./weights.pt')
 
 model_YOLO = YOLO("./best.pt") #가중치 파일 경로
 
-crosswalk_mask = cv2.imread('./mask.bmp', cv2.IMREAD_GRAYSCALE)
-
 cap = cv2.VideoCapture(0)
 
+if 'mask.bmp' in os.listdir():
+    crosswalk_mask = cv2.imread('./mask.bmp', cv2.IMREAD_GRAYSCALE)
+else:
+    _, img = cap.read()
+    crosswalk_mask = model.predict(cv2.resize(img, (640,640)))
+    cv2.imwrite('./mask.bmp', crosswalk_mask)
+    
 arduino = serial.Serial('COM4', 9600, timeout=1)
 
 while True:
