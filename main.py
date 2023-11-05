@@ -14,12 +14,28 @@ model_YOLO = YOLO("./best.pt") #가중치 파일 경로
 
 cap = cv2.VideoCapture(0)
 
+def mouse_event(event, x, y, flags, param):
+    global mask_pts
+    if event == cv2.EVENT_FLAG_LBUTTON:    
+        mask_pts.append([x,y])
+    if len(mask_pts) == 4:
+        mask = np.full((h,w,1), 0, dtype=np.uint8)
+        for i in [([0,1,2]),([0,2,3])]:
+            mask = cv2.fillPoly(mask, [np.array(mask_pts, dtype = np.int32)[i]], (255,255,255))
+        cv2.imwrite('mask.bmp', mask)
+
 if 'mask.bmp' in os.listdir():
     crosswalk_mask = cv2.imread('./mask.bmp', cv2.IMREAD_GRAYSCALE)
 else:
     _, img = cap.read()
-    crosswalk_mask = model.predict(cv2.resize(img, (640,640)))
-    cv2.imwrite('./mask.bmp', crosswalk_mask)
+    h, w, c = img.shape
+    cv2.namedWindow('masking')
+    cv2.setMouseCallback("masking", mouse_event)
+    mask_pts = []
+    
+    cv2.imshow('masking', img)
+    cv2.waitKey()
+    crosswalk_mask = cv2.imread('./mask.bmp', cv2.IMREAD_GRAYSCALE)
     
 arduino = serial.Serial('COM4', 9600, timeout=1) #포트에 따라 바꾸기
 
